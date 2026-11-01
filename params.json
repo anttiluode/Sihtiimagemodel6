@@ -1,0 +1,33 @@
+{
+  "depth": 8,
+  "sigma": 0.01,
+  "csc_iters": 400,
+  "csc_lam": 0.001,
+  "csc_gamma": 0.3,
+  "ind_lam": 0.002,
+  "epll_beta_scale": 0.5,
+  "tune_log": [
+    "csc lam=0.0005 gamma=0.3: val mse 0.002468",
+    "csc lam=0.0005 gamma=1: val mse 0.002552",
+    "csc lam=0.0005 gamma=3: val mse 0.002658",
+    "csc lam=0.001 gamma=0.3: val mse 0.002331",
+    "csc lam=0.001 gamma=1: val mse 0.002378",
+    "csc lam=0.001 gamma=3: val mse 0.002430",
+    "csc lam=0.002 gamma=0.3: val mse 0.002396",
+    "csc lam=0.002 gamma=1: val mse 0.002443",
+    "csc lam=0.002 gamma=3: val mse 0.002484",
+    "independent lam=0.0001: val mse 0.004775",
+    "independent lam=0.0003: val mse 0.003450",
+    "independent lam=0.001: val mse 0.002760",
+    "independent lam=0.002: val mse 0.002731",
+    "epll beta_scale=0.5: val mse 0.002520",
+    "epll beta_scale=1: val mse 0.002599",
+    "epll beta_scale=2: val mse 0.002658",
+    "wiener (no knobs): val mse 0.002741",
+    "csc chosen setting at 800 iterations: val mse 0.002447 (convergence check)",
+    "NOTE: csc_gamma=0.3 sits on the edge of its grid",
+    "NOTE: ind_lam=0.002 sits on the edge of its grid",
+    "NOTE: epll_beta_scale=0.5 sits on the edge of its grid"
+  ],
+  "tune_seconds": 940
+}
