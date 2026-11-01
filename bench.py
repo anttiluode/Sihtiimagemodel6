@@ -10,17 +10,22 @@ from models import GaussianPrior, fit_dictionary, CSC, IndependentPatches, EPLL
 from metrics import score
 
 ROOT = Path(__file__).resolve().parent
-ARMS = ("fogged", "wiener", "wiener_sample", "independent", "epll", "csc")
+ARMS = ("fogged", "wiener", "wiener_sample", "independent", "no_inhibition", "epll", "csc")
 
 
-def load_params(path=ROOT / "params.json"):
-    return json.loads(Path(path).read_text())
+def load_params(path=ROOT / "params.json", fog="sihti"):
+    """Parameters for one fog: the top level is the Sihti fog; other fogs override."""
+    p = json.loads(Path(path).read_text())
+    q = {k: v for k, v in p.items() if k not in ("heat",)}
+    if fog != "sihti" and fog in p:
+        q.update(p[fog])
+    return q
 
 
 class Bench:
-    def __init__(self, train, depth, sigma, cache=None):
-        self.depth, self.sigma = depth, sigma
-        self.A = fog_matrix(depth)
+    def __init__(self, train, depth, sigma, cache=None, dt=0.25):
+        self.depth, self.sigma, self.dt = depth, sigma, dt
+        self.A = fog_matrix(depth, dt=dt)
         blob = None
         if cache and Path(cache).exists():
             blob = pickle.loads(Path(cache).read_bytes())
@@ -33,11 +38,11 @@ class Bench:
         self.gauss, self.D, self.ep = blob["gauss"], blob["D"], blob["epll"]
         self.ep.A, self.ep.AtA = self.A, self.A.T @ self.A           # same states, this fog
         self.csc = CSC(self.D, self.A)
-        self.ind = IndependentPatches(self.D, depth)
+        self.ind = IndependentPatches(self.D, depth, dt=dt)
 
     def observe_set(self, truths, seed):
         rng = np.random.default_rng(seed)
-        return [observe(t, self.depth, self.sigma, rng) for t in truths]
+        return [observe(t, self.depth, self.sigma, rng, self.dt) for t in truths]
 
     def run(self, Y, p, arms=ARMS, seed=0):
         rng = np.random.default_rng(seed + 7)
@@ -53,9 +58,14 @@ class Bench:
                 out[arm] = [self.gauss.sample(y, A, s, rng) for y in Y]
             elif arm == "independent":
                 out[arm] = [self.ind.solve(y, p["ind_lam"]) for y in Y]
+            elif arm == "no_inhibition":
+                out[arm] = [self.csc.solve_no_inhibition(y, p["noinh_lam"], p["csc_gamma"], p["noinh_scale"])
+                            for y in Y]
             elif arm == "epll":
                 b = tuple(p["epll_beta_scale"] * v for v in (1, 4, 8, 16, 32, 64))
                 out[arm] = [self.ep.solve(y, s, w, betas=b) for y, w in zip(Y, W)]
+            elif arm == "csc_converged":
+                out[arm] = [self.csc.solve(y, p["csc_lam"], p["csc_gamma"], iters=1600) for y in Y]
             elif arm == "csc":
                 out[arm] = [self.csc.solve(y, p["csc_lam"], p["csc_gamma"], iters=p["csc_iters"])
                             for y in Y]

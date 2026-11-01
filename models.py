@@ -175,6 +175,40 @@ class CSC:
         x = c + self.S(a)
         return (x, c, a) if return_parts else x
 
+    # ---- the tight control: same atoms, operator, core and sparsity; competition OFF
+    def _core(self, y, gamma):
+        key = float(gamma)
+        if getattr(self, "_core_key", None) != key:
+            self._core_M = np.linalg.inv(self.A.T @ self.A + gamma * self.HtH) @ self.A.T
+            self._core_key = key
+        return (self._core_M @ np.ravel(y)).reshape(self.shape)
+
+    def footprint_norms(self):
+        """||A S e_j||^2 for every atom j at every position (exact, cached)."""
+        if not hasattr(self, "_fn"):
+            K, h, w = self.cshape
+            out = np.empty(self.cshape)
+            for k in range(K):
+                cols = np.zeros((h * w,) + self.shape)
+                for i in range(h):
+                    for j in range(w):
+                        cols[i * w + j, i:i + P, j:j + P] = self.D[k]
+                F = cols.reshape(h * w, -1) @ self.A.T
+                out[k] = (F ** 2).sum(1).reshape(h, w)
+            self._fn = out
+        return self._fn
+
+    def solve_no_inhibition(self, y, lam, gamma, scale=1.0):
+        """Every atom fits the SAME shared residual of the smooth core ALONE
+        (LCA with the lateral-inhibition term deleted: u = b, a = soft(u)).
+        c0 = argmin 1/2||y - A c||^2 + gamma/2 ||H c||^2,   r = y - A c0,
+        a_j = scale * soft(<A S e_j, r>, lam) / ||A S e_j||^2."""
+        c0 = self._core(y, gamma)
+        r = np.ravel(y) - self.A @ c0.ravel()
+        b = self.St((self.A.T @ r).reshape(self.shape))
+        a = scale * soft(b, lam) / self.footprint_norms()
+        return c0 + self.S(a)
+
 
 # ------------------------------------------------------------------ independent patches
 class IndependentPatches:
@@ -187,9 +221,9 @@ class IndependentPatches:
     neighbours chose.
     """
 
-    def __init__(self, D, depth, shape=(32, 32)):
+    def __init__(self, D, depth, shape=(32, 32), dt=0.25):
         self.D = np.asarray(D, float).reshape(len(D), -1)      # (K, 64)
-        self.A8 = fog_matrix(depth, (P, P))
+        self.A8 = fog_matrix(depth, (P, P), dt)
         self.idx = patch_index(shape)
         self.shape = shape
         self.count = np.bincount(self.idx.ravel(), minlength=shape[0] * shape[1])

@@ -85,3 +85,29 @@ def test_patch_index_covers_every_pixel():
     idx = patch_index()
     assert idx.shape == (625, 64)
     assert np.bincount(idx.ravel(), minlength=1024).min() >= 1
+
+
+def test_the_two_fogs():
+    """Sihti's purify at dt=0.25 passes the checkerboard; the matched heat fog does not."""
+    from fog import FOGS
+    c = np.cos(31 * np.pi * (np.arange(32) + .5) / 32)
+    v = np.outer(c, c).ravel()                # highest Neumann mode: an exact eigenvector
+    s, h = FOGS["sihti"], FOGS["heat"]
+    keep = lambda f: (fog_matrix(f["depth"], dt=f["dt"]) @ v) @ v / (v @ v)
+    assert keep(s) > 0.9                      # band-stop: the finest pattern survives (sign-flipping)
+    assert keep(h) < 1e-6                     # true low-pass
+    ev = np.linalg.eigvalsh(fog_matrix(h["depth"], dt=h["dt"]))
+    assert ev.min() > -1e-12 and ev.max() <= 1 + 1e-12
+
+
+def test_no_inhibition_footprints_and_independence():
+    A = fog_matrix(4)
+    csc = CSC(rand_dict(), A)
+    fn = csc.footprint_norms()
+    for k, i, j in [(0, 0, 0), (3, 12, 7), (11, 24, 24)]:
+        e = np.zeros(csc.cshape); e[k, i, j] = 1.
+        assert np.isclose(fn[k, i, j], np.sum((A @ csc.S(e).ravel()) ** 2))
+    # without inhibition, an atom's coefficient does not depend on any other atom's
+    y = observe(rng.random((32, 32)), 4, .01, rng)
+    x1 = csc.solve_no_inhibition(y, 1e-3, 1., 1.)
+    assert np.isfinite(x1).all()

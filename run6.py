@@ -12,9 +12,10 @@ import numpy as np
 
 from bench import Bench, ARMS, ROOT, load_params, score_all, pans, flicker
 from data import natural, load_images, check_disjoint, TEST_PHOTOS
+from fog import FOGS
 from figures import comparison_figure, temporal_figure, atoms_figure
 
-TEMPORAL_ARMS = ("wiener", "wiener_sample", "independent", "epll", "csc")
+TEMPORAL_ARMS = ("wiener", "wiener_sample", "independent", "no_inhibition", "epll", "csc")
 
 
 def boot_ratio(a, b, n=2000, seed=0):
@@ -25,19 +26,28 @@ def boot_ratio(a, b, n=2000, seed=0):
     return float(a.mean() / b.mean()), float(np.percentile(r, 2.5)), float(np.percentile(r, 97.5))
 
 
-def gates(sc, fl):
+def image_gates(sc, suffix=""):
     g = {}
     m = lambda k: sc[k]["mse_per_image"]
     r, lo, hi = boot_ratio(m("csc"), m("wiener"))
-    g["G1 focus beyond linear"] = dict(
+    g["G1 focus beyond linear" + suffix] = dict(
         ratio=r, ci=[lo, hi], edge_f=[sc["csc"]["edge_f"], sc["wiener"]["edge_f"]],
         passed=bool(r <= .95 and hi < 1 and sc["csc"]["edge_f"] > sc["wiener"]["edge_f"]))
     r, lo, hi = boot_ratio(m("csc"), m("independent"))
-    g["G2 coordination pays"] = dict(
+    g["G2 beats independent patches" + suffix] = dict(
         ratio=r, ci=[lo, hi], orient_deg=[sc["csc"]["orient_deg"], sc["independent"]["orient_deg"]],
         passed=bool(r <= .95 and hi < 1 and sc["csc"]["orient_deg"] < sc["independent"]["orient_deg"]))
+    r, lo, hi = boot_ratio(m("csc"), m("no_inhibition"))
+    g["G2b competition itself pays" + suffix] = dict(
+        ratio=r, ci=[lo, hi], edge_f=[sc["csc"]["edge_f"], sc["no_inhibition"]["edge_f"]],
+        passed=bool(r <= .95 and hi < 1 and sc["csc"]["edge_f"] > sc["no_inhibition"]["edge_f"]))
     r, lo, hi = boot_ratio(m("csc"), m("epll"))
-    g["G3 beats Model 4 engine"] = dict(ratio=r, ci=[lo, hi], passed=bool(r <= .97 and hi < 1))
+    g["G3 beats Model 4 engine" + suffix] = dict(ratio=r, ci=[lo, hi], passed=bool(r <= .97 and hi < 1))
+    return g
+
+
+def gates(sc, fl):
+    g = image_gates(sc)
     g["G4 temporal"] = dict(
         flicker=dict(csc=fl["csc"], wiener=fl["wiener"], independent=fl["independent"]),
         passed=bool(fl["csc"] <= 1.25 * fl["wiener"] and fl["csc"] <= fl["independent"]))
@@ -87,7 +97,7 @@ def main():
 
     bench = Bench(train, p["depth"], p["sigma"], cache=cache)
     Y = bench.observe_set(test, seed=23)
-    out = bench.run(Y, p, seed=23)
+    out = bench.run(Y, p, arms=ARMS + (("csc_converged",) if not args.train_folder else ()), seed=23)
     sc = score_all(out, test)
     print(table(sc))
 
@@ -114,15 +124,27 @@ def main():
         for k, v in result["gates"].items():
             print(f"{k}: {'PASS' if v['passed'] else 'FAIL'}  {json.dumps({x: y for x, y in v.items() if x != 'passed'})}")
 
-        # report-only: heavier fog, same parameters, same fitted priors
-        b16 = Bench(train, 16, p["sigma"], cache=cache)
-        Y16 = b16.observe_set(test, seed=23)
-        sc16 = score_all(b16.run(Y16, p, seed=23), test)
+        # gated replication: true heat fog, matched diffusion time, its own validation tuning
+        ph = load_params(fog="heat")
+        bh = Bench(train, ph["depth"], p["sigma"], cache=cache, dt=ph["dt"])
+        oh = bh.run(bh.observe_set(test, seed=23), ph, seed=23)
+        sch = score_all(oh, test)
+        comparison_figure(test, oh, out_dir / "comparison_heat.png")
+        result["heat"] = dict(params={k: v for k, v in ph.items() if k != "tune_log"}, scores=sch,
+                              gates=image_gates(sch, " (heat fog)"))
+        print("\nheat fog (gated replication)\n" + table(sch))
+        for k, v in result["heat"]["gates"].items():
+            print(f"{k}: {'PASS' if v['passed'] else 'FAIL'}  {json.dumps({x: y for x, y in v.items() if x != 'passed'})}")
+        # report-only: heavier Sihti fog, Sihti parameters
+        f16 = FOGS["sihti16"]
+        b16 = Bench(train, f16["depth"], p["sigma"], cache=cache, dt=f16["dt"])
+        sc16 = score_all(b16.run(b16.observe_set(test, seed=23), p, seed=23), test)
         result["depth16_report_only"] = sc16
-        print("\ndepth 16 (report only)\n" + table(sc16))
+        print("\nSihti fog depth 16 (report only)\n" + table(sc16))
 
     result["seconds"] = round(time.time() - t0)
-    for s in [result["scores"]] + ([result["depth16_report_only"]] if "depth16_report_only" in result else []):
+    extra = [result["depth16_report_only"], result["heat"]["scores"]] if "heat" in result else []
+    for s in [result["scores"]] + extra:
         for v in s.values():
             v["mse_per_image"] = [round(x, 7) for x in v["mse_per_image"]]
     (out_dir / "metrics.json").write_text(json.dumps(result, indent=1))

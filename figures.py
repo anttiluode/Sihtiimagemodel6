@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from fog import sieve
 from metrics import edges
 
-LABELS = dict(truth="truth", fogged="fogged (Sihti core, depth 8)", wiener="Wiener (linear)",
+LABELS = dict(truth="truth", fogged="fogged", wiener="Wiener (linear)",
               wiener_sample="Wiener sample", independent="independent patches",
-              epll="EPLL (Model 4 states)", csc="CSC (competing atoms)")
+              no_inhibition="atoms, no inhibition", epll="EPLL (Model 4 states)", csc="CSC (competing atoms)")
 
 
 def _fine(x):
@@ -17,7 +17,7 @@ def _fine(x):
 
 
 def comparison_figure(truths, out, path, picks=None):
-    arms = ["truth"] + [a for a in ("fogged", "wiener", "wiener_sample", "independent", "epll", "csc") if a in out]
+    arms = ["truth"] + [a for a in ("fogged", "wiener", "wiener_sample", "independent", "no_inhibition", "epll", "csc") if a in out]
     picks = picks if picks is not None else np.linspace(0, len(truths) - 1, 4).astype(int)
     fig, ax = plt.subplots(3 * len(picks), len(arms), figsize=(1.9 * len(arms), 1.9 * 3 * len(picks)))
     for r, i in enumerate(picks):

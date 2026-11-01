@@ -3,9 +3,9 @@
   "sigma": 0.01,
   "csc_iters": 400,
   "csc_lam": 0.001,
-  "csc_gamma": 0.3,
+  "csc_gamma": 0.1,
   "ind_lam": 0.002,
-  "epll_beta_scale": 0.5,
+  "epll_beta_scale": 0.125,
   "tune_log": [
     "csc lam=0.0005 gamma=0.3: val mse 0.002468",
     "csc lam=0.0005 gamma=1: val mse 0.002552",
@@ -27,7 +27,28 @@
     "csc chosen setting at 800 iterations: val mse 0.002447 (convergence check)",
     "NOTE: csc_gamma=0.3 sits on the edge of its grid",
     "NOTE: ind_lam=0.002 sits on the edge of its grid",
-    "NOTE: epll_beta_scale=0.5 sits on the edge of its grid"
+    "NOTE: epll_beta_scale=0.5 sits on the edge of its grid",
+    "--- stage 2 (tune_extend.py): grids extended past stage-1 edges ---",
+    "csc lam=0.0007 gamma=0.03 iters=400: val mse 0.002362",
+    "csc lam=0.0007 gamma=0.1 iters=400: val mse 0.002346",
+    "csc lam=0.0007 gamma=0.3 iters=400: val mse 0.002366",
+    "csc lam=0.001 gamma=0.03 iters=400: val mse 0.002334",
+    "csc lam=0.001 gamma=0.1 iters=400: val mse 0.002308",
+    "csc lam=0.001 gamma=0.3 iters=400: val mse 0.002331",
+    "csc lam=0.0015 gamma=0.03 iters=400: val mse 0.002355",
+    "csc lam=0.0015 gamma=0.1 iters=400: val mse 0.002321",
+    "csc lam=0.0015 gamma=0.3 iters=400: val mse 0.002354",
+    "csc lam=0.001 gamma=0.1 iters=1600: val mse 0.002544",
+    "csc objective excess at 400 vs 1600 iterations (8 val images): 1.91%",
+    "independent lam=0.002: val mse 0.002731",
+    "independent lam=0.004: val mse 0.002834",
+    "independent lam=0.008: val mse 0.003005",
+    "epll beta_scale=0.125: val mse 0.002411",
+    "epll beta_scale=0.25: val mse 0.002440",
+    "epll beta_scale=0.5: val mse 0.002520",
+    "NOTE after stage 2: ind_lam=0.002 still on the edge of its extended grid",
+    "NOTE after stage 2: epll_beta_scale=0.125 still on the edge of its extended grid",
+    "stage 2 chose csc_lam=0.001 csc_gamma=0.1 csc_iters=400 ind_lam=0.002 epll_beta_scale=0.125"
   ],
-  "tune_seconds": 940
+  "tune_seconds": 2008
 }

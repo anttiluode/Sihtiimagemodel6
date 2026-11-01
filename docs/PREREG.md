@@ -65,3 +65,54 @@ A smoke test of the figure code (before this file was committed) ran 4 validatio
 pan over the test photograph `camera` (seed 5, not the preregistered seed 31; 60 CSC iterations,
 untuned parameters). Its numbers were seen: flicker wiener 0.027, independent 0.019, csc 0.014.
 Disclosed because that photograph is in the temporal test.
+
+---
+
+## Amendment 1 — before any test run (Nov 1, after Astra's review)
+
+Committed before `run6.py` has ever been run on test data. Nothing below was chosen by looking at
+test results; the only test-photograph exposure is the smoke test disclosed above.
+
+**1. The fog is not a blur — description corrected.** Away from borders, `purify` at dt = 0.25
+replaces a pixel by the mean of its four neighbours, so one step multiplies the mode (kx, ky) by
+(cos kx + cos ky)/2. Eight steps kill the middle frequencies but **pass the checkerboard corner**:
+the highest 32×32 Neumann mode keeps 0.995⁸ ≈ 96 % of its amplitude (sign-flipping each step).
+"σ ≈ 2 px of heat diffusion" above is wrong; it is a band-stop. (Found by Astra; verified, and
+now a test.) The primary experiment keeps the preregistered operator because it is the one the
+whole Sihti line uses — but its results say nothing about ordinary blur on their own.
+
+**2. Second fog, gated: true heat diffusion with matched time.** The same Laplacian integrated
+over the same time (8 × 0.25 = 2) in 32 steps of 1/16: a real low-pass (all eigenvalues in
+[0, 1]; the highest mode falls to ~10⁻¹⁰). Every arm is re-tuned for it on validation
+(`tune_amend.py`). Gates **G1, G2, G2b, G3 are repeated on the heat fog** with the same thresholds.
+A claim about seeing through fog in general needs both.
+
+**3. Tighter coordination control (Astra).** `independent` differs from `csc` in more than
+coordination (local operator, no smooth core). New arm `no_inhibition`: the **same atoms, same
+full operator, same smooth core** as `csc`; every atom fits the core's residual **alone**
+(LCA with its lateral-inhibition term deleted: u = b, a = scale·soft(u, λ)/‖ASe_j‖²), λ and scale
+tuned on validation. New gate:
+
+| Gate | Claim | Pass condition |
+|---|---|---|
+| **G2b** | competition itself is what pays | MSE(csc)/MSE(no_inhibition) ≤ 0.95, CI upper < 1, **and** edge-F(csc) > edge-F(no_inhibition) |
+
+G2 is kept and renamed "beats independent patches": it compares two whole methods, not coordination alone.
+
+**4. Tuning history.** Stage 1 (`tune.py`) put three choices on grid edges and showed CSC was not
+converged at 400 iterations (800 iterations scored *worse* on validation, i.e. early stopping was
+acting as a regulariser). Stage 2 (`tune_extend.py`) extended those grids and made the iteration
+count an explicit choice between 400 and 1600, recording how far 400 iterations is from the
+objective's optimum. Every value and every grid edge is logged in `params.json`.
+
+**5. Report-only:** the Sihti fog at depth 16 (Sihti parameters). The temporal test (G4) stays
+on the primary fog; frames are still reconstructed independently — it tests consistency, not
+memory.
+
+**6. Early stopping, disclosed.** Stage 2 found that running CSC near convergence (1600 iterations)
+is *worse* on validation (MSE 0.00254) than the chosen 400 iterations (0.00231), although 400
+iterations is only 1.9 % above the objective's optimum. Part of CSC's advantage is therefore early
+stopping acting as an extra regulariser, not the objective alone. The gated arm stays the validated
+400-iteration solver; a report-only arm `csc_converged` (1600 iterations, same λ, γ) is added to the
+primary test so the size of that dependence is visible. EPLL's β scale was still on its grid edge
+after stage 2 and is extended once more in stage 3.
