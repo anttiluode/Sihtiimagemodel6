@@ -1,0 +1,90 @@
+{
+ "sihti": {
+  "wiener": {
+   "precision": 0.5237716939623563,
+   "recall": 0.9333482192698448,
+   "edges_per_image": 255.6875,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.2437408625730994
+  },
+  "independent": {
+   "precision": 0.8484036071167439,
+   "recall": 0.811209110193145,
+   "edges_per_image": 128.21875,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.049342105263157895
+  },
+  "no_inhibition": {
+   "precision": 0.8082223242994947,
+   "recall": 0.8125488444791783,
+   "edges_per_image": 136.0625,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.06405336257309942
+  },
+  "epll": {
+   "precision": 0.8861950185479597,
+   "recall": 0.7724684604220163,
+   "edges_per_image": 117.9375,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.04376827485380117
+  },
+  "csc": {
+   "precision": 0.7072841726618705,
+   "recall": 0.8852294294964832,
+   "edges_per_image": 173.75,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.1006030701754386
+  },
+  "truth": {
+   "precision": 1.0,
+   "recall": 1.0,
+   "edges_per_image": 139.953125,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.00872624269005848
+  }
+ },
+ "heat": {
+  "wiener": {
+   "precision": 0.5232241264458306,
+   "recall": 0.9410516914145362,
+   "edges_per_image": 258.015625,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.24195906432748537
+  },
+  "independent": {
+   "precision": 0.7231446656270067,
+   "recall": 0.8940493468795355,
+   "edges_per_image": 170.328125,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.09343019005847954
+  },
+  "no_inhibition": {
+   "precision": 0.6775303121506578,
+   "recall": 0.8958356592609132,
+   "edges_per_image": 181.703125,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.11915204678362573
+  },
+  "epll": {
+   "precision": 0.9095450249763737,
+   "recall": 0.778497264709166,
+   "edges_per_image": 115.734375,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.036047149122807015
+  },
+  "csc": {
+   "precision": 0.658396172869537,
+   "recall": 0.9109076699787876,
+   "edges_per_image": 192.703125,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.12851790935672514
+  },
+  "truth": {
+   "precision": 1.0,
+   "recall": 1.0,
+   "edges_per_image": 139.953125,
+   "truth_edges_per_image": 139.953125,
+   "flat_spurious_rate": 0.00872624269005848
+  }
+ }
+}
